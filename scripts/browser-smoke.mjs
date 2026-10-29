@@ -2,7 +2,7 @@ import {spawn} from 'node:child_process';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import assert from 'node:assert/strict';
-const root=process.cwd(), profile=resolve(root,'.qa-profile'), out=resolve(root,'qa-output');
+const root=process.cwd(), profile=resolve(root,'.qa-profile',String(Date.now())), out=resolve(root,'qa-output');
 await mkdir(profile,{recursive:true});await mkdir(out,{recursive:true});
 const chrome=process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const child=spawn(chrome,['--headless','--disable-gpu','--no-first-run','--no-default-browser-check','--disable-background-networking','--remote-debugging-port=0',`--user-data-dir=${profile}`,'about:blank'],{stdio:'ignore',windowsHide:true});
