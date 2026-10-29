@@ -19,6 +19,12 @@ try{
  await call('Runtime.enable');await call('Page.enable');await call('Network.enable');await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
  await call('Page.navigate',{url:process.env.QA_URL||'http://127.0.0.1:8931/'});await waitFor('document.querySelectorAll(".supplier-card").length > 0');
  const initial=await evaluate('document.querySelectorAll(".supplier-card").length');assert.ok(initial>=6);
+ await evaluate('document.querySelector("#query").value="сырники";document.querySelector("#city").value="spb";document.querySelector("#search-form").requestSubmit()');
+ assert.equal(await evaluate('document.querySelector(".category-tab.active").textContent'),'Готовая продукция');
+ assert.ok(await evaluate('[...document.querySelectorAll("#results .company-name")].some(e=>e.textContent.includes("Гуд Фуд"))'));
+ await evaluate('document.querySelector("#clear-filters").click();document.querySelector("#query").value="упаковка для доставки";document.querySelector("#search-form").requestSubmit()');
+ assert.equal(await evaluate('document.querySelectorAll("#results .supplier-card").length'),4);
+ await evaluate('document.querySelector("#clear-filters").click()');
  // Verify the actual generated download, not only a success toast.
  const csvPath=resolve(out,'postavka-suppliers.csv');try{await unlink(csvPath)}catch{}
  await call('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:out});

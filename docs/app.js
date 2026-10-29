@@ -1,5 +1,5 @@
-import {CATALOG,CATEGORIES,REGIONS} from './catalog.mjs';
-import {normalize,parseIntent,selectSuppliers,completeness,toCSV} from './domain.mjs';
+import {CATALOG,CATEGORIES,REGIONS} from './catalog.mjs?v=91f3521c8ea0';
+import {normalize,parseIntent,selectSuppliers,completeness,toCSV} from './domain.mjs?v=91f3521c8ea0';
 
 const $=s=>document.querySelector(s);
 const staticMode=window.POSTAVKA_STATIC_MODE===true;
