@@ -59,10 +59,13 @@ try{
  assert.equal(await evaluate('document.querySelectorAll("img").length'),0);
  await evaluate('document.querySelector("#clear-filters").click()');
  shot=await call('Page.captureScreenshot',{format:'png'});await writeFile(resolve(out,'desktop.png'),Buffer.from(shot.data,'base64'));
- await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
- await new Promise(r=>setTimeout(r,250));
- assert.ok(await evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'),'Mobile layout overflows horizontally');
- shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(resolve(out,'mobile.png'),Buffer.from(shot.data,'base64'));
+ for(const width of [320,360,375,390,430]){
+  await call('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true});
+  await new Promise(r=>setTimeout(r,100));
+  assert.ok(await evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'),`Mobile layout overflows at ${width}px`);
+  assert.ok(await evaluate('[...document.querySelectorAll(".nav-item,.search-panel,.search-panel .primary,.region-wrap")].every(e=>{const r=e.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1})'),`Primary controls leave the viewport at ${width}px`);
+  shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(resolve(out,`mobile-${width}.png`),Buffer.from(shot.data,'base64'));
+ }
  assert.deepEqual(errors,[]);
  if(staticMode)assert.ok(!requests.some(url=>url.includes('chatgpt.site')),'Static mode made a request to chatgpt.site');
  console.log(JSON.stringify({ok:true,initialSuppliers:initial,checks:['search','category','comparison','supplier-details','saved-list','notes','notes-after-reload','CSV-download','persistence','empty-state','XSS-escaping','mobile-overflow','no-runtime-errors'],screenshots:out}));
