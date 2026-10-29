@@ -1,5 +1,5 @@
 import {spawn} from 'node:child_process';
-import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {readFile,mkdir,writeFile,unlink} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import assert from 'node:assert/strict';
 const root=process.cwd(), profile=resolve(root,'.qa-profile',String(Date.now())), out=resolve(root,'qa-output');
@@ -19,6 +19,12 @@ try{
  await call('Runtime.enable');await call('Page.enable');await call('Network.enable');await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1080,deviceScaleFactor:1,mobile:false});
  await call('Page.navigate',{url:process.env.QA_URL||'http://127.0.0.1:8931/'});await waitFor('document.querySelectorAll(".supplier-card").length > 0');
  const initial=await evaluate('document.querySelectorAll(".supplier-card").length');assert.ok(initial>=6);
+ // Verify the actual generated download, not only a success toast.
+ const csvPath=resolve(out,'postavka-suppliers.csv');try{await unlink(csvPath)}catch{}
+ await call('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:out});
+ await evaluate('document.querySelector("#export").click()');
+ let exported;for(let i=0;i<50;i++){try{exported=await readFile(csvPath,'utf8');break}catch{}await new Promise(r=>setTimeout(r,100));}
+ assert.ok(exported?.includes('Поставщик'),'CSV file was not downloaded');assert.ok(exported.includes('Восток-Запад'));assert.ok(exported.includes('https://www.ews.ru/'));
  await evaluate('document.querySelector("[data-example=Упаковка]").click()');
  assert.equal(await evaluate('document.querySelectorAll(".supplier-card").length'),4);
  await evaluate('document.querySelectorAll("[data-compare]").forEach((e,i)=>{if(i<2){e.checked=true;e.dispatchEvent(new Event("change",{bubbles:true}))}})');
@@ -29,6 +35,7 @@ try{
  let shot=await call('Page.captureScreenshot',{format:'png'});await writeFile(resolve(out,'compare-desktop.png'),Buffer.from(shot.data,'base64'));
  await evaluate('document.querySelector("#compare-dialog").close(); document.querySelector("[data-detail]").click()');
  assert.ok(await evaluate('document.querySelector("#detail-content").textContent.includes("Источники данных")'));
+ const inspectedId=await evaluate('document.querySelector("#detail [data-rfq]").dataset.rfq');
  const staticMode=await evaluate('window.POSTAVKA_STATIC_MODE === true');
  if(staticMode){assert.equal(await evaluate('document.querySelectorAll("[data-refresh]").length'),0);assert.equal(await evaluate('document.querySelectorAll("[data-static-source]").length'),1);}
  await evaluate('document.querySelector("[data-save]").click(); const n=document.querySelector("#supplier-note");n.value="Проверить объём и доставку";n.dispatchEvent(new Event("input",{bubbles:true}))');
@@ -36,6 +43,9 @@ try{
  assert.ok((await evaluate('document.querySelectorAll(".supplier-card").length'))>=1);
  await call('Page.reload');await waitFor('document.querySelectorAll(".supplier-card").length > 0');
  assert.ok(Number(await evaluate('document.querySelector("#saved-count").textContent'))>=1);
+ await evaluate(`document.querySelector('#results [data-detail="${inspectedId}"]').click()`);
+ assert.equal(await evaluate('document.querySelector("#supplier-note").value'),'Проверить объём и доставку');
+ await evaluate('document.querySelector("#detail").close()');
  await evaluate('document.querySelector("#query").value="неттакоготовара123";document.querySelector("#search-form").requestSubmit()');
  assert.equal(await evaluate('document.querySelectorAll(".supplier-card").length'),0);assert.ok(await evaluate('!!document.querySelector(".empty")'));
  await evaluate('document.querySelector("#clear-filters").click();document.querySelector("#compare-clear").click()');
@@ -49,5 +59,5 @@ try{
  shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});await writeFile(resolve(out,'mobile.png'),Buffer.from(shot.data,'base64'));
  assert.deepEqual(errors,[]);
  if(staticMode)assert.ok(!requests.some(url=>url.includes('chatgpt.site')),'Static mode made a request to chatgpt.site');
- console.log(JSON.stringify({ok:true,initialSuppliers:initial,checks:['search','category','comparison','supplier-details','saved-list','notes','persistence','empty-state','XSS-escaping','mobile-overflow','no-runtime-errors'],screenshots:out}));
+ console.log(JSON.stringify({ok:true,initialSuppliers:initial,checks:['search','category','comparison','supplier-details','saved-list','notes','notes-after-reload','CSV-download','persistence','empty-state','XSS-escaping','mobile-overflow','no-runtime-errors'],screenshots:out}));
 }finally{try{const version=await(await fetch(`http://127.0.0.1:${port}/json/version`)).json();const b=new WebSocket(version.webSocketDebuggerUrl);await new Promise(r=>b.onopen=r);b.send(JSON.stringify({id:1,method:'Browser.close'}));b.close()}catch{}ws.close();child.unref();}

@@ -17,6 +17,17 @@ test('A local office and nationwide delivery have different eligibility',()=>{
  assert.ok(search({city:'ekb'}).some(s=>s.id==='zavitok'));
  assert.ok(!search({city:'ekb',localOnly:true}).some(s=>s.id==='zavitok'));
 });
+test('Specific product names outrank overlapping short stems',()=>{
+ assert.equal(parseIntent('сырники',CATEGORIES,REGIONS).category,'ready');
+ assert.equal(parseIntent('сыр',CATEGORIES,REGIONS).category,'dairy');
+ const rows=search({query:'сырники',city:'spb',category:'ready'});
+ assert.ok(rows.some(s=>s.id==='goodfood'));
+ assert.ok(!rows.some(s=>s.id==='zavitok'));
+});
+test('Packaging for delivery is not reduced to suppliers with the exact word in their description',()=>{
+ const rows=search({query:'упаковка для доставки',city:'ekb',category:'packaging'});
+ assert.ok(rows.some(s=>s.id==='foodface'));assert.ok(rows.some(s=>s.id==='korrex'));assert.equal(rows.length,4);
+});
 test('Unknown documents do not pass the documents-information filter',()=>{
  assert.ok(search({city:'all',docsOnly:true}).every(s=>s.docsClaim));
  assert.ok(!search({city:'all',docsOnly:true}).some(s=>s.id==='foodface'));
