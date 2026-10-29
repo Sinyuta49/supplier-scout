@@ -1,1 +1,2 @@
-window.POSTAVKA_API_BASE = "https://supplier-scout-artem.artem-goweb.chatgpt.site";
+window.POSTAVKA_API_BASE = "";
+window.POSTAVKA_STATIC_MODE = true;
