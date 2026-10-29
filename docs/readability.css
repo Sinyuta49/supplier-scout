@@ -1,0 +1,13 @@
+/* Readable secondary text on laptop-sized procurement workspaces. */
+@media(min-width:761px){
+ .subtitle{font-size:14px;color:#74816e}
+ .company-name{font-size:15px}.company-type{font-size:11px;color:#7f8b75}
+ .card-description{font-size:12px;color:#6d796a;line-height:1.8;min-height:43px}
+ .fact-label{font-size:11px;color:#7c8871}.fact-value{font-size:11px;color:#617557}.fact-value.unknown{color:#839078}
+ .card-contact,.card-detail,.compare-check{font-size:11px}.tags .tag{font-size:10px}
+ .check strong{font-size:11px}.check small{font-size:10px;color:#7e8c70}
+ .source-note p,.selection-help p{font-size:11px;color:#7b896e}.source-note strong{font-size:12px}
+ .catalog-foot p{font-size:11px;color:#7a886f}.results-toolbar p{font-size:11px}
+ .category-tab{font-size:12px}.examples,.examples button{font-size:11px}
+ .supplier-card{padding-top:20px}.filters-title strong{font-size:13px}
+}
